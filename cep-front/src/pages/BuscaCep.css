@@ -1,0 +1,130 @@
+.container-cep {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.titulo {
+  text-align: center;
+  color: #2c3e50;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.form-cep {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.label-cep {
+  font-weight: 600;
+  color: #34495e;
+  font-size: 0.95rem;
+}
+
+.input-cep {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #dfe6e9;
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+}
+
+.input-cep:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.input-cep:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.btn-buscar {
+  padding: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.btn-buscar:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-buscar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-buscar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loader {
+  text-align: center;
+  color: #667eea;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 1rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.erro {
+  background-color: #ffe5e5;
+  color: #c0392b;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #c0392b;
+  font-weight: 500;
+}
+
+.card-endereco {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #0b1220;
+}
+
+.titulo-resultado {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+.card-endereco p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.card-endereco strong {
+  color: #667eea;
+}
+
+@media (max-width: 600px) {
+  .container-cep {
+    padding: 0.5rem;
+  }
+
+  .titulo {
+    font-size: 1.5rem;
+  }
+}
