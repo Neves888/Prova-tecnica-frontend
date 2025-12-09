@@ -102,6 +102,13 @@ header h1 {
   padding: 1rem;
   border-radius: 8px;
   background: #fafafa;
+  color: #0b1220;
+}
+
+.card-endereco .pesquisado {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.95rem;
+  color: #0f172a;
 }
 
 .loader {

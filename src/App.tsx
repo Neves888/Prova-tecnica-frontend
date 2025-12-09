@@ -72,6 +72,13 @@ function App() {
     }
   }
 
+  const formatarCep = (valor: string | undefined) => {
+    if (!valor) return ''
+    const nums = valor.replace(/\D/g, '')
+    if (nums.length <= 5) return nums
+    return nums.slice(0, 5) + '-' + nums.slice(5, 8)
+  }
+
   return (
     <div className="app-root">
       <header>
@@ -103,12 +110,16 @@ function App() {
           )}
         </form>
 
-        <section className="resultado">
+        <section className="resultado" aria-live="polite">
           {carregando && <div className="loader" aria-hidden="true" />}
 
           {endereco && (
             <div className="card-endereco">
               <h2>Endereço encontrado</h2>
+              <p className="pesquisado">
+                <strong>CEP pesquisado:</strong>{' '}
+                {endereco.cep ? formatarCep(endereco.cep) : formatarCep(cep)}
+              </p>
               <p>
                 <strong>CEP:</strong> {endereco.cep}
               </p>
