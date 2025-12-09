@@ -1,0 +1,14 @@
+{
+  "noticias": [
+    {
+      "id": 1,
+      "titulo": "Notícia de exemplo",
+      "descricao": "Esta é uma notícia de exemplo."
+    },
+    {
+      "id": 2,
+      "titulo": "Outra notícia",
+      "descricao": "Conteúdo da segunda notícia."
+    }
+  ]
+}
