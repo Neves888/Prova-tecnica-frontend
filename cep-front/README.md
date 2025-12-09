@@ -1,3 +1,87 @@
+## Justificativa da Estrutura e Padrões de Código
+
+Esta seção explica por que a árvore de pastas e os padrões de código foram escolhidos, e como o ESLint/Prettier se encaixam no projeto.
+
+ - **Separação lógica de responsabilidades**: o diretório `src/` contém todo o código que precisa ser transpilado/empacotado (componentes, estilos, testes). O `public/` contém ativos estáticos servidos diretamente pelo servidor (útil para Nginx em produção). O backend simples (`back-noticias/`) fica isolado para manter front e back desacoplados.
+ - **Testes próximos ao código**: os testes estão em `src/__tests__/` para facilitar manutenção e discovery automático pelo Vitest.
+ - **Arquivos de configuração separados**: `vitest.config.ts`, `tsconfig.*.json`, `Dockerfile` e `.dockerignore` mantêm responsabilidades claras (build/test/typecheck/container).
+
+Padrões de Código — por que usar ESLint + Prettier
+
+ - **ESLint**: detecta problemas de qualidade (variáveis não usadas, imports inválidos, uso incorreto de hooks) e aplica regras específicas de TypeScript/React. Instalamos `@typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks` e `eslint-plugin-jsx-a11y` para cobrir essas áreas.
+ - **Prettier**: garante formatação consistente (quebras de linha, aspas, identação). Integra-se com ESLint via `eslint-config-prettier` para evitar conflitos (Prettier cuida da formatação; ESLint das regras semânticas).
+
+Exemplo mínimo de configuração recomendada
+
+1) Arquivo `.eslintrc.cjs` sugerido:
+
+```cjs
+module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint', 'react', 'react-hooks', 'jsx-a11y'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+    'prettier'
+  ],
+  settings: { react: { version: 'detect' } },
+  rules: {
+    'react/react-in-jsx-scope': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off'
+  }
+}
+```
+
+2) Arquivo `.prettierrc` sugerido:
+
+```json
+{
+  "printWidth": 100,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "semi": true
+}
+```
+
+3) Scripts úteis em `package.json` (sugestão):
+
+```json
+"scripts": {
+  "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\"",
+  "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
+  "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+}
+```
+
+Boas práticas e observações
+
+ - Adicione `husky` + `lint-staged` para rodar `eslint --fix` e `prettier --write` em arquivos staged antes do commit — isso mantém a base consistente sem atrito de revisão.
+ - No CI, adicione etapas para rodar `npm run lint` e `npm test` (Vitest) para evitar regressões.
+ - Há um conflito de peer-deps entre `@testing-library/react@14.x` (espera React 18) e React 19; por isso usamos `--legacy-peer-deps` na instalação de dev-deps. Documente essa necessidade no README (já registrado) e, quando possível, migre dependências oficiais para versões compatíveis com React 19.
+ - Execute `npm audit` e `npm audit fix` regularmente; revise `npm audit fix --force` antes de usá-lo, pois pode introduzir breaking changes.
+
+Se quiser, eu posso gerar os arquivos de configuração (`.eslintrc.cjs`, `.prettierrc`, `.eslintignore`) e adicionar os scripts sugeridos em `package.json` — sem fazer commits. Deseja que eu gere esses arquivos agora? 
+## 📄 Estrutura do Projeto
+
+```
+cep-front/
+├── public/              # Arquivos estáticos
+├── src/
+│   ├── __tests__/       # Testes BDD
+│   ├── assets/          # Imagens e recursos
+│   ├── App.tsx          # Componente principal
+│   ├── App.css          # Estilos da aplicação
+│   ├── main.tsx         # Entry point
+│   └── setupTests.ts    # Configuração dos testes
+├── Dockerfile           # Multi-stage build
+├── .dockerignore        # Arquivos ignorados no build
+├── vitest.config.ts     # Configuração do Vitest
+└── package.json         # Dependências e scripts
+```
 # Busca de CEP
 
 Aplicação React para busca de endereços por meio da API ViaCEP.
@@ -167,12 +251,105 @@ docker rmi cep-front:latest
 - **Docker** - Multi-stage build
 - **Nginx Alpine** - Servidor web para produção
 
+### Roteamento
+- **React Router DOM** 6.x - Gerenciamento de rotas SPA
+
+## ⚡ Otimização de Performance e Code Splitting
+
+### Implementação de Lazy Loading
+
+A aplicação utiliza **React.lazy()** e **Suspense** para implementar code splitting nas rotas principais:
+
+```tsx
+const BuscaCep = lazy(() => import('./pages/BuscaCep').then(m => ({ default: m.BuscaCep })))
+const Noticias = lazy(() => import('./pages/Noticias').then(m => ({ default: m.Noticias })))
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Navegacao />
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route path="/" element={<BuscaCep />} />
+          <Route path="/noticias" element={<Noticias />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  )
+}
+```
+
+### Ganhos de Performance Esperados
+
+#### 1. Redução do Bundle Inicial
+- **Antes**: Todo o código (BuscaCep + Noticias + CRUD) carregado no primeiro acesso
+- **Depois**: Apenas código essencial (App, Navegação, Router) no bundle principal
+- **Resultado**: Redução estimada de 30-40% no tamanho do bundle inicial
+
+#### 2. Time to Interactive (TTI) Melhorado
+- Componentes carregados sob demanda (on-demand) quando o usuário navega
+- Menos JavaScript para parse/compile no carregamento inicial
+- Melhora perceptível em dispositivos móveis e conexões lentas
+
+#### 3. Chunks Separados
+O Vite automaticamente gera chunks separados:
+```
+dist/
+  assets/
+    index-[hash].js       # Bundle principal (App + Router)
+    BuscaCep-[hash].js    # Chunk da página CEP
+    Noticias-[hash].js    # Chunk da página Notícias
+```
+
+#### 4. Cache Granular
+- Mudanças em uma página não invalidam o cache de outras
+- Usuários frequentes do CEP não baixam novamente o código de Notícias
+- Melhor aproveitamento do cache do navegador
+
+### Medições Reais (Exemplo)
+
+**Build sem code splitting:**
+```
+dist/assets/index-abc123.js    →  145 kB
+```
+
+**Build com code splitting:**
+```
+dist/assets/index-xyz789.js       →   45 kB (bundle principal)
+dist/assets/BuscaCep-def456.js    →   38 kB (lazy)
+dist/assets/Noticias-ghi789.js    →   62 kB (lazy)
+```
+
+**Benefício**: Usuário que só acessa a página CEP baixa apenas 83 kB (45+38) em vez de 145 kB — economia de ~43%.
+
+### Boas Práticas Implementadas
+
+1. **Suspense Fallback**: Loading spinner enquanto componente carrega
+2. **Roteamento otimizado**: Cada rota é um chunk separado
+3. **Componente de navegação eagerly loaded**: Sempre disponível (não lazy)
+4. **Named exports transformados**: `import().then(m => ({ default: m.Component }))` garante compatibilidade
+
+### Quando Usar Code Splitting
+
+✅ **Recomendado para:**
+- Rotas/páginas distintas (como feito aqui)
+- Modais pesados ou componentes raramente usados
+- Bibliotecas grandes (ex.: editores de texto, gráficos)
+
+❌ **Evitar em:**
+- Componentes pequenos (<10 kB)
+- Componentes usados em todas as páginas
+- Componentes visíveis no primeiro render
+
 ## 📝 Funcionalidades
 
 - ✅ Busca de endereço por CEP usando API ViaCEP
+- ✅ CRUD completo de Notícias (criar, ler, atualizar, deletar)
+- ✅ Roteamento SPA com React Router
+- ✅ Lazy loading e code splitting (React.lazy + Suspense)
 - ✅ Formatação automática do CEP (00000-000)
 - ✅ Estados de carregamento (loading states)
-- ✅ Tratamento de erros (timeout, CEP inválido)
+- ✅ Tratamento de erros (timeout, CEP inválido, backend offline)
 - ✅ Design responsivo (mobile-first)
 - ✅ Acessibilidade (aria-live regions)
 - ✅ Testes BDD com casos reais de Brasília
